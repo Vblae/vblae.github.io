@@ -5,6 +5,8 @@
 // 0W6)$]KK
 // &@vtpoQ=
 
+// 134258190321
+
 let events = {
   CLICK: "click",
   MOUSE_DOWN: "mousedown",
@@ -610,11 +612,8 @@ let display = (function() {
     if(c)
       ctx.fillStyle = c;
 
-    let x = l[0].x,
-        y = l[0].y;
-
     ctx.beginPath();
-    ctx.moveTo(x, y);
+    ctx.moveTo(l[0].x, l[0].y);
     for(let i = 0; i < l.length; i++)
       ctx.lineTo(l[i].x, l[i].y);
 
@@ -630,7 +629,7 @@ let display = (function() {
 
   DrawingRegion.prototype.strokePath = function(l, c) {
     if(l.length <= 0)
-      return __display;
+      return this;
 
     let ctx = this.ctx,
         oc = ctx.fillStyle;
@@ -638,11 +637,8 @@ let display = (function() {
     if(c)
       ctx.strokeStyle = c;
 
-    let x = l[0].x,
-        y = l[0].y;
-
     ctx.beginPath();
-    ctx.moveTo(x, y);
+    ctx.moveTo(l[0].x, l[0].y);
     for(let i = 1; i < l.length; i++)
       ctx.lineTo(l[i].x, l[i].y);
 
@@ -804,12 +800,19 @@ let windows = (function() {
     this.onWindowCloseAction = null;
     this.foregroundWindow = null;
     this.windows = utils.new.TransparentList();
+    this.windowMap = {};
   }
 
   WindowGroup.prototype = Object.create(null);
   WindowGroup.prototype.constructor = WindowGroup;
 
   WindowGroup.prototype.close = function(w, e) {
+    this.calculateOverlapMap(w);
+    for(let overlapId in this.overlapMap[w.id])
+      this.windowMap[overlapId].forceDraw();
+
+    delete this.windowMap[w.id];
+
     this.windows.remove(w);
     this.handleWindowClose(w, e);
   };
@@ -819,8 +822,10 @@ let windows = (function() {
   };
 
   WindowGroup.prototype.handleWindowClose = function(w, e) {
+
     if(this.onWindowCloseAction)
       this.onWindowCloseAction(w, e);
+
   };
 
   WindowGroup.prototype.clear = function() {
@@ -878,6 +883,7 @@ let windows = (function() {
     w.group = this;
     this.foregroundWindow = w;
     this.windows.appendTail(w);
+    this.windowMap[w.id] = w;
     this.calculateOverlapMap(w);
   };
 
